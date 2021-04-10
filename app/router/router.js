@@ -8,19 +8,20 @@ module.exports = function(app) {
 	const userStudyController = require('../controller/userstudy.controller');
 	const brainStorm = require('../controller/brainstorm.controller');
 	/* auth */
-	app.post('/api/auth/signup', [verifySignUp.checkDuplicateUserName], controller.signup);
-	
+	app.post('/api/auth/signup', [verifySignUp.checkDuplicateUserName], controller.signup);	
 	app.post('/api/auth/update-password', controller.updatepassword);
-
-	app.post('/api/auth/signin', controller.signin);
+	app.post('/api/auth/signin', controller.signin);	
+	app.get('/api/auth/user-get-photo', [authJwt.verifyToken], controller.getUserPhoto);
+	app.post('/api/auth/user-update-photo', [authJwt.verifyToken], controller.updateUserPhoto);
 	
+
+
+	////////////////////////////////////////////////////
 	app.post('/api/auth/reset-password-mail', controller.sendResetPasswordLink);
 
 	app.post('/api/auth/update-userinfo', [authJwt.verifyToken], controller.updateUserContent);
 
-	app.post('/api/auth/user-update-photo', [authJwt.verifyToken], controller.updateUserPhoto);
-
-	app.get('/api/auth/user-get-photo', [authJwt.verifyToken], controller.getUserPhoto);
+	
 	/* word */
 	app.get('/api/latitude/getall', wordDataController.getAllLatitudes)
 

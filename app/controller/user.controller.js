@@ -142,7 +142,8 @@ exports.signin = (req, res) => {
 exports.updateUserPhoto = async(req, res) => {
 	console.log("User Controller/Update User Photo...")	
 	try{
-		var sql = sprintf("UDPATE tbusers SET image='%s' WHERE id=%d", req.body.image, req.userId);
+		var sql = sprintf("UPDATE tbusers SET image='%s' WHERE id=%d", req.body.image, req.body.userid);
+		console.log(sql);
 		await db.sequelize.query(sql);
 		res.status(200).json({
 			code: 0,
