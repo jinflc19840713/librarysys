@@ -3,72 +3,29 @@ const authJwt = require('./verifyJwtToken');
 
 module.exports = function(app) {
 
-    const controller = require('../controller/user.controller.js');
-	const wordDataController = require('../controller/worddata.controller.js');
-	const userStudyController = require('../controller/userstudy.controller');
-	const brainStorm = require('../controller/brainstorm.controller');
+    const user_controller = require('../controller/user.controller.js');
+	const authorities_controller = require('../controller/authorities.controller.js');
 	/* auth */
-	app.post('/api/auth/signup', [verifySignUp.checkDuplicateUserName], controller.signup);	
-	app.post('/api/auth/update-password', controller.updatepassword);
-	app.post('/api/auth/signin', controller.signin);	
-	app.get('/api/auth/user-get-photo', [authJwt.verifyToken], controller.getUserPhoto);
-	app.post('/api/auth/user-update-photo', [authJwt.verifyToken], controller.updateUserPhoto);
+	app.post('/api/auth/signup', [verifySignUp.checkDuplicateUserName], user_controller.signup);	
+	app.post('/api/auth/update-password', user_controller.updatepassword);
+	app.post('/api/auth/signin', user_controller.signin);
 	
 
-
-	////////////////////////////////////////////////////
-	app.post('/api/auth/reset-password-mail', controller.sendResetPasswordLink);
-
-	app.post('/api/auth/update-userinfo', [authJwt.verifyToken], controller.updateUserContent);
-
+	/* user api */
+	app.get('/api/user/user-get-photo', [authJwt.verifyToken], user_controller.getUserPhoto);
+	app.post('/api/user/user-update-photo', [authJwt.verifyToken], user_controller.updateUserPhoto);
+	app.post('/api/user/user-list', [authJwt.verifyToken], user_controller.getUserList);
+	app.post('/api/user/admin-list', [authJwt.verifyToken], user_controller.getAdminList);
+	app.post('/api/user/user-update', [authJwt.verifyToken], user_controller.updateUserInfo);
+	app.post('/api/user/user-delete', [authJwt.verifyToken], user_controller.deleteUserInfo);
 	
-	/* word */
-	app.get('/api/latitude/getall', wordDataController.getAllLatitudes)
-
-	app.get('/api/latitude/zoom', wordDataController.getLatitudeZoom)
-
-	app.get('/api/longitude/getall', wordDataController.getAllLongitudes)
-
-	app.get('/api/longitude/zoom', wordDataController.getLongitudeZoom)
-
-	app.post('/api/worddata/select', wordDataController.wordSelect)
-
-	app.post('/api/worddata/selectlist', [authJwt.verifyToken], wordDataController.wordSelectList)
-
-	app.post('/api/worddata/selectlist_zoom', [authJwt.verifyToken], wordDataController.wordSelectListZoom)
-
-	app.get('/api/worddata/selectlist_zoom0', wordDataController.wordSelectListZoom0)
-
-	app.get('/api/worddata/selectlist_zoom1', wordDataController.wordSelectListZoom1)
-
-	app.get('/api/worddata/selectlist_zoom2', wordDataController.wordSelectListZoom2)
 	
-	//GRE Word Map SelectList
-	app.post('/api/worddata/selectlist_gre', wordDataController.wordSelectListGRE)
-
-	//GRE Latitude SelectList
-	app.post('/api/worddata/latitude_gre', wordDataController.getLatitudeGRE)
-
-	//GRE Longitude SelectList
-	app.post('/api/worddata/longitude_gre', wordDataController.getLongitudeGRE)
-
-	/* user study */
-	app.post('/api/userstudy/save', [authJwt.verifyToken], userStudyController.UserStudySave)
-
-	app.post('/api/userstudy/selectlist', [authJwt.verifyToken], userStudyController.UserStudySelectList)
-	/* Learning Route */
-	app.get('/api/userstudy/getlearningroute', [authJwt.verifyToken], userStudyController.GetLearningRoute)
-
-	/* BrainStorm */
-	app.post('/api/brainstorm/synonymwords', [authJwt.verifyToken], brainStorm.getSynonymWords) 
-
-	app.post('/api/brainstorm/updatebcredit', [authJwt.verifyToken], brainStorm.updateUserBCredit)
- 
-	app.get('/api/brainstorm/getbcredit', [authJwt.verifyToken], brainStorm.getUserBCredit)
-	/* test */
-	app.get('/api/test/user', [authJwt.verifyToken], controller.userContent);
 	
-	app.get('/api/test/pm', [authJwt.verifyToken, authJwt.isPmOrAdmin], controller.managementBoard);
+	/* authorities user api */
+	app.post('/api/authorities/create', [authJwt.verifyToken], authorities_controller.create);
+	app.post('/api/authorities/update', [authJwt.verifyToken], authorities_controller.update);
+	app.post('/api/authorities/delete', [authJwt.verifyToken], authorities_controller.delete);
+	app.post('/api/authorities/list', [authJwt.verifyToken], authorities_controller.list);
 	
-	app.get('/api/test/admin', [authJwt.verifyToken, authJwt.isAdmin], controller.adminBoard);
+
 }

@@ -8,14 +8,13 @@ const Op = db.Sequelize.Op;
 
 const md5 = require('md5')
 var jwt = require('jsonwebtoken');
-var bcrypt = require('bcryptjs');
+//var bcrypt = require('bcryptjs');
 var sprintf = require('sprintf-js').sprintf;
 
 
 exports.signup = (req, res) => {
 	// Save User to Database
 	console.log("Processing func -> SignUp " + req);
-
 	User.create({
 		name: req.body.name,
 		username: req.body.username,
@@ -23,8 +22,6 @@ exports.signup = (req, res) => {
 		phone: req.body.phone,
 		image: req.body.image,
 		authority_id: req.body.authorizty,
-		create_date: new Date(),
-		update_date: new Date(),
 		is_admin: req.body.is_admin,
 		is_use:false,
 	}).then(user => {
@@ -44,52 +41,25 @@ exports.signup = (req, res) => {
 
 exports.updatepassword = async(req, res) =>{
 	console.log("Update-Password");
-	var username = req.body.username;
-	var password = md5(req.body.password);
-	try{
-		var query = sprintf("UPDATE tbusers SET password='%s' WHERE username='%s' AND is_use=true",  password, username);
-        
-        let o_Result = await db.sequelize.query(query);
-		console.log("---+", o_Result[0]['changedRows']);
-		if(o_Result[0]['changedRows'] == 1) 		
-			res.status(200).send({code:0, msg:"Success"});
-		else
-			res.status(200).send({code:1, msg:"Failed"});
-    }catch(err){
-        console.log(err);
-        res.status(500).send({code:500, msg:"Sql error", error: err})
-    } 
-}
-
-/* Reset Reset Password Link*/
-exports.sendResetPasswordLink = (req, res) => {
-	var email = req.body.email;
-	User.findOne({
-		where:{
-			email: email
-		}
+	User.update({
+		password: md5(req.body.password),
+		update_date: new Date(),				
+	},
+	{
+		where: {id:req.body.id}
 	}).then(user => {
-		if(!user) {
-			return res.status(404).send({code:-1, msg: 'User Not Found.'})
-		}
-		try{
-			const sgMail = require('@sendgrid/mail');
-			sgMail.setApiKey(env.sg_api_key);
-			const msg = {
-				to: email,
-				from: 'memorize@support.com',
-				subject: 'Reset password link',
-				text: `Hi ${user.username} \n
-				Please click on the following link ${env.url_front}/reset-password to reset your password. \n\n
-				If you did not request this, please ignore this email and your password will remain unchanged.\n`,
-			};
-			sgMail.send(msg);
-
-		}catch(err){
-			return res.status(400).send({code:-2, msg:'Email sending error'});
-		}
-		return res.status(200).send({code:0, msg: "Success"})
-	})
+		res.status(200).send({
+			code:200,
+			msg:"User password updated successfully!",
+			//data:user
+		});
+	}).catch(err => {
+		res.status(500).send({
+			code:500,
+			msg: "Failed errer",
+			error: err
+		});
+	})	
 }
 
 exports.signin = (req, res) => {
@@ -141,20 +111,26 @@ exports.signin = (req, res) => {
 
 exports.updateUserPhoto = async(req, res) => {
 	console.log("User Controller/Update User Photo...")	
-	try{
-		var sql = sprintf("UPDATE tbusers SET image='%s' WHERE id=%d", req.body.image, req.body.userid);
-		console.log(sql);
-		await db.sequelize.query(sql);
-		res.status(200).json({
-			code: 0,
-			msg: "Update User Photo Success"
-		})
-	}catch(err){
-		res.status(200).json({
-			code: 1,
-			msg: "Update User Photo Failed",
-		})
-	}
+
+	User.update({
+		image: req.body.image,
+		update_date: new Date(),				
+	},
+	{
+		where: {id:req.body.id}
+	}).then(user => {
+		res.status(200).send({
+			code:200,
+			msg:"User photo updated successfully!",
+			//data:user
+		});
+	}).catch(err => {
+		res.status(500).send({
+			code:500,
+			msg: "Failed errer",
+			error: err
+		});
+	})	
 }
 
 exports.getUserPhoto = async(req, res) => {
@@ -173,123 +149,89 @@ exports.getUserPhoto = async(req, res) => {
 			error: err
 		});
 	});
-/*
-	try{
-		var sql = sprintf("SELECT image FROM tbusers WHERE id=%d", req.userId);
-		let res = await db.sequelize.query(sql);
-		console.log(sql);		
-        res.status(200).send({code:0, data: res[0]['image']});
-	}catch(err){
-		res.status(500).send({code:1, msg:"sql error", error: err});
-	}
-	*/
 }
 
-
-exports.userContent = (req, res) => {
-	User.findOne({
-		where: {id: req.userId},
-		attributes: ['name', 'username', 'email'],
-		include: [{
-			model: Role,
-			attributes: ['id', 'name'],
-			through: {
-				attributes: ['userId', 'roleId'],
-			}
-		}]
-	}).then(user => {
-		res.status(200).json({
-			code: 0,
-			msg: "User Content Page",
-			data: user
-		});
-	}).catch(err => {
-		res.status(500).json({
-			code: 1,
-			msg: "Can not access User Page",
-			error : err
-		});
-	})
-}
-
-exports.updateUserContent = async(req, res) => {
-	console.log("User Controller/Update User Content...")
-	
-	var username = req.body.username;
-	var password = md5(req.body.password);
-	var phone = req.body.phone;
-	
+exports.getUserList = async(req, res) => {
 	try{
-		await db.sequelize.query("CALL `testdb`.`Proc_Update_User_Content`(:i_UserId, :i_Email, :i_Username, :i_Password, @o_Result)", {replacements:{i_UserId:req.userId, i_Email:email, i_Username:username, i_Password:password}})
-		let o_Result = await db.sequelize.query("SELECT @o_Result;")
+		var sql = sprintf("SELECT * FROM vw_userlist WHERE name like '%s%s%s' AND is_deleted=0 ORDER BY name LIMIT %d,%d",
+									'%', req.body.key, '%', req.body.offset, req.body.pagesize );
+		console.log("getUserList: %s", sql);
+		let o_Result = await db.sequelize.query(sql)
 		res.status(200).json({
 			code: 0,
-			msg: "Update User Content Success",
-			data: {email:email, username:username}
-		})
-		// }else{
-		// 	res.status(200).json({
-		// 		code: 1,
-		// 		msg: "Update User Content Failed"
-		// 	})
-		// }
+			msg: "Get User List Success",
+			data: o_Result[0]
+		})				
 	}catch(err){
 		res.status(500).json({
 			code: 1,
-			msg: "Update User Content Failed"
+			msg: "No result"
 		})
 	}
 }
 
-
-exports.adminBoard = (req, res) => {
-	User.findOne({
-		where: {id: req.userId},
-		attributes: ['name', 'username', 'email'],
-		include: [{
-			model: Role,
-			attributes: ['id', 'name'],
-			through: {
-				attributes: ['userId', 'roleId'],
-			}
-		}]
-	}).then(user => {
+exports.getAdminList = async(req, res) => {
+	try{
+		var sql = sprintf("SELECT * FROM vw_adminlist WHERE name like '%s%s%s' AND is_deleted=0 ORDER BY name LIMIT %d,%d",
+									'%', req.body.key, '%', req.body.offset, req.body.pagesize );
+		console.log("getAdminList: %s", sql);
+		let o_Result = await db.sequelize.query(sql)
 		res.status(200).json({
-			code: 200,
-			msg: "Admin Board",
-			data: user
-		});
-	}).catch(err => {
+			code: 0,
+			msg: "Get Admin List Success",
+			data: o_Result[0]
+		})				
+	}catch(err){
 		res.status(500).json({
-			code: 500,
-			msg: "Can not access Admin Board",
-			error: err
-		});
-	})
+			code: 1,
+			msg: "No result"
+		})
+	}
 }
 
-exports.managementBoard = (req, res) => {
-	User.findOne({
-		where: {id: req.userId},
-		attributes: ['name', 'username', 'email'],
-		include: [{
-			model: Role,
-			attributes: ['id', 'name'],
-			through: {
-				attributes: ['userId', 'roleId'],
-			}
-		}]  
+exports.updateUserInfo = async(req, res) => {
+	console.log("User Controller/Update User Information...")	
+	User.update({
+		name: req.body.name,
+		username: req.body.username,		
+		phone: req.body.phone,		
+		authority_id: req.body.authorizty,		
+		is_use:req.body.is_use,
+		},
+		{
+			where: {id:req.body.id}
+		}).then(user => {
+			res.status(200).send({
+				code:200,
+				msg:"User updated successfully!",
+				//data:user
+			});
+		}).catch(err => {
+			res.status(500).send({
+				code:500,
+				msg: "Failed err",
+				error: err
+			});
+	});	
+}
+exports.deleteUserInfo = async(req, res) => {
+	console.log("User Controller/Update User Information...")
+	User.update({		
+		is_deleted:1,
+	},
+	{
+		where: {id:req.body.id}
 	}).then(user => {
-		res.status(200).json({
-			code: 200,
-			msg: "Management Board",
-			data: user
+		res.status(200).send({
+			code:200,
+			msg:"User deleted successfully!",
+			//data:user
 		});
 	}).catch(err => {
-		res.status(500).json({
-			code: 500,
-			msg: "Can not access Management Board",
+		res.status(500).send({
+			code:500,
+			msg: "Failed err",
 			error: err
 		});
-	})
+	});	
 }

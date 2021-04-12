@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-	const User = sequelize.define('tbuser', {
+	const User = sequelize.define('tbusers', {
 		name: {
 			type: Sequelize.STRING(20)
 		},
@@ -18,24 +18,21 @@ module.exports = (sequelize, Sequelize) => {
 		},
 		authority_id:{
 			type: Sequelize.INTEGER
-		},
-		create_date:{
-			type: Sequelize.DATE
-		},
-		update_date:{
-			type: Sequelize.DATE
-		},
+		},		
 		is_admin:{
-			type: Sequelize.BOOLEAN //if true, it is administrator, otherwise, member.
+			type: Sequelize.BOOLEAN, //if true, it is administrator, otherwise, member.
+			defaultValue: '0'
 		},
 		remarks: {
 			type: Sequelize.STRING(200)
 		},
 		is_use:{
-			type: Sequelize.BOOLEAN 
+			type: Sequelize.BOOLEAN ,
+			defaultValue: '0'
 		},
 		is_deleted:{
-			type: Sequelize.BOOLEAN 
+			type: Sequelize.BOOLEAN ,
+			defaultValue: '0'
 		},
 	},
 	{
