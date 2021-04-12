@@ -1,5 +1,5 @@
 const env = {
-  database: 'dblibrarysys',
+  database: 'dbstudystore',
   username: 'root',
   password: '',
   host: 'localhost',
