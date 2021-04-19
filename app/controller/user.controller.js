@@ -153,15 +153,19 @@ exports.getUserPhoto = async(req, res) => {
 
 exports.getUserList = async(req, res) => {
 	try{
-		var sql = sprintf("SELECT * FROM vw_userlist WHERE name like '%s%s%s' AND is_deleted=0 ORDER BY name LIMIT %d,%d",
-									'%', req.body.key, '%', req.body.offset, req.body.pagesize );
-		console.log("getUserList: %s", sql);
+		var sql = sprintf("SELECT * FROM tbusers WHERE name like '%s%s%s' AND is_admin=0 AND is_deleted=0 ORDER BY name ",
+									'%', req.body.key, '%');
+		var count_sql = sprintf("SELECT COUNT(*) AS cnt FROM (%s) AS NUMVIEW", sql);
+		let num_Result = await db.sequelize.query(count_sql);		
+		var total_size = num_Result[0][0]['cnt'];		
+		sql += sprintf(" LIMIT %d, %d", req.body.offset, req.body.pagesize);
+
 		let o_Result = await db.sequelize.query(sql)
 		res.status(200).json({
 			code: 0,
-			msg: "Get User List Success",
-			data: o_Result[0]
-		})				
+			total_size: total_size,
+			data: o_Result[0],
+		})			
 	}catch(err){
 		res.status(500).json({
 			code: 1,
@@ -172,14 +176,18 @@ exports.getUserList = async(req, res) => {
 
 exports.getAdminList = async(req, res) => {
 	try{
-		var sql = sprintf("SELECT * FROM vw_adminlist WHERE name like '%s%s%s' AND is_deleted=0 ORDER BY name LIMIT %d,%d",
-									'%', req.body.key, '%', req.body.offset, req.body.pagesize );
-		console.log("getAdminList: %s", sql);
+		var sql = sprintf("SELECT * FROM tbusers WHERE name like '%s%s%s' AND is_admin=1 AND is_deleted=0 ORDER BY name ",
+									'%', req.body.key, '%');
+		var count_sql = sprintf("SELECT COUNT(*) AS cnt FROM (%s) AS NUMVIEW", sql);
+		let num_Result = await db.sequelize.query(count_sql);		
+		var total_size = num_Result[0][0]['cnt'];		
+		sql += sprintf(" LIMIT %d, %d", req.body.offset, req.body.pagesize);
+
 		let o_Result = await db.sequelize.query(sql)
 		res.status(200).json({
 			code: 0,
-			msg: "Get Admin List Success",
-			data: o_Result[0]
+			total_size: total_size,
+			data: o_Result[0],
 		})				
 	}catch(err){
 		res.status(500).json({
@@ -194,7 +202,8 @@ exports.updateUserInfo = async(req, res) => {
 	User.update({
 		name: req.body.name,
 		username: req.body.username,		
-		phone: req.body.phone,		
+		phone: req.body.phone,
+		image: req.body.image,		
 		authority_id: req.body.authorizty,		
 		is_use:req.body.is_use,
 		},
